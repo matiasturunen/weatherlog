@@ -77,3 +77,20 @@ export function findUserWithToken(access_token) {
 
   return db.one(sql, [access_token.token]);
 }
+
+export function getWeatherData(timeFrom, timeTo) {
+  return db.many(`SELECT * FROM weather WHERE logged >= $1 AND logged <= $2`, [timeFrom, timeTo]);
+}
+
+export function getDatesMinMax() {
+  const minmax = {
+    min: '2006-04-01 00:00:00.000 +0200',
+    max: '2006-04-01 00:00:00.000 +0200'
+  }
+  return db.one(`SELECT MIN(logged) AS mi, MAX(logged) AS ma FROM weather`)
+    /*.then(mm => {
+      minmax.min = mm.mi;
+      minmax.max = mm.ma;
+      return minmax;
+    })*/
+}

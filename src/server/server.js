@@ -69,5 +69,22 @@ app.post('/api/logout', auth.ensureAuthorized, (req, res) => {
 
 app.listen(port, () => console.log(`Checklist app listening on port ${port}!`));
 
+/* 
+ * Weather stuff
+ */
+
+ app.get('/api/weatherhistory', auth.ensureAuthorized, (req, res) => {
+  db.findUserWithToken(req.accessToken)
+    .then(user => res.send(db.getWeatherData(req.body.timeFrom, req.body.timeTo)))
+    .catch(err => customOr500(err, res));
+ });
+
+ app.get('/api/datesminmax', auth.ensureAuthorized, (req, res) => {
+  db.findUserWithToken(req.accessToken)
+    .then(user => db.getDatesMinMax())
+    .then(minmax => res.send(minmax))
+    .catch(err => customOr500(err, res));
+ });
+
 // export app to use it somewhere else
 export default app;
