@@ -75,7 +75,15 @@ app.listen(port, () => console.log(`Checklist app listening on port ${port}!`));
 
  app.get('/api/weatherhistory', auth.ensureAuthorized, (req, res) => {
   db.findUserWithToken(req.accessToken)
-    .then(user => res.send(db.getWeatherData(req.body.timeFrom, req.body.timeTo)))
+    .then(user => db.getWeatherData(req.body.timeFrom, req.body.timeTo))
+    .then(weather => res.send(weather))
+    .catch(err => customOr500(err, res));
+ });
+
+ app.get('/api/weatherhistory/partial', auth.ensureAuthorized, (req, res) => {
+  db.findUserWithToken(req.accessToken)
+    .then(user => db.getWeatherDataPartial(req.query.timeFrom, req.query.timeTo, req.query.n))
+    .then(weather => res.send(weather))
     .catch(err => customOr500(err, res));
  });
 

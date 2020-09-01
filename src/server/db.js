@@ -83,14 +83,22 @@ export function getWeatherData(timeFrom, timeTo) {
 }
 
 export function getDatesMinMax() {
-  const minmax = {
-    min: '2006-04-01 00:00:00.000 +0200',
-    max: '2006-04-01 00:00:00.000 +0200'
+  return db.one(`SELECT MIN(logged) AS mi, MAX(logged) AS ma FROM weather`);
+}
+
+export function getWeatherDataPartial(timeFrom, timeTo, n) {
+  if (n < 2) {
+    return createErrorPromise('Invalid N', 400);
   }
-  return db.one(`SELECT MIN(logged) AS mi, MAX(logged) AS ma FROM weather`)
-    /*.then(mm => {
-      minmax.min = mm.mi;
-      minmax.max = mm.ma;
-      return minmax;
-    })*/
+  return db.many(`
+    WITH w AS (
+      SELECT *, ROW_NUMBER() OVER(ORDER BY logged ASC) AS row
+      FROM weather
+      WHERE logged >= $1 AND logged <= $2
+    )
+
+    SELECT * FROM w
+    WHERE row % ((SELECT COUNT(*) FROM w) / $3) = 0
+    ORDER BY logged ASC
+  `, [timeFrom, timeTo, n]);
 }

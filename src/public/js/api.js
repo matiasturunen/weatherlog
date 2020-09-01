@@ -21,3 +21,29 @@ function apiGetDatesMinmax(accessToken) {
     data: { accessToken: accessToken },
   });
 }
+
+function apiGetWeatherHistory(accessToken, timeFrom, timeTo, n) {
+  if (n) {
+    console.log('PARAMS', timeFrom, timeTo, n)
+    return $.ajax({
+      type: 'GET',
+      url: '/api/weatherhistory/partial',
+      data: {
+        accessToken: accessToken,
+        timeFrom: timeFrom,
+        timeTo: timeTo,
+        n: n,
+      }
+    });
+  } else {
+    return $.ajax({
+      type: 'GET',
+      url: '/api/weatherhistory',
+      data: {
+        accessToken: accessToken,
+        timeFrom: timeFrom,
+        timeTo: timeTo,
+      }
+    });
+  }
+}
