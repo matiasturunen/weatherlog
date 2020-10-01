@@ -36,7 +36,8 @@ export function createDatabase() {
               COMMIT;';
 
   return db.none(sql1)
-    .then(() => dblib.create_user('admin', process.env.ADMIN_PASS || '', '')); // Create admin with password from env var. Or leave empty for generated random password
+    .then(() => dblib.create_user('admin', process.env.ADMIN_PASS || '', '')) // Create admin with password from env var. Or leave empty for generated random password
+    .then(() => dblib.create_user('logger', '', 'no@mail.fi')); // Create logger user
 }
 
 if (require.main === module) {

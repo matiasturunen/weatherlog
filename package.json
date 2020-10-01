@@ -10,7 +10,8 @@
     "reset-database": "babel-node scripts/drop_tables.js && npm run create-database",
     "linter": "eslint --ext js src test scripts",
     "test-mocha": "mocha --require babel-register ./test --recursive",
-    "create-dummy-data": "babel-node scripts/insert_test_data.js"
+    "create-dummy-data": "babel-node scripts/insert_test_data.js",
+    "loginuser": "babel-node scripts/loginuser.js"
   },
   "author": "",
   "license": "ISC",

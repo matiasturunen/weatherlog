@@ -102,3 +102,8 @@ export function getWeatherDataPartial(timeFrom, timeTo, n) {
     ORDER BY logged ASC
   `, [timeFrom, timeTo, n]);
 }
+
+export function createWeather(temp, hum, pres) {
+  const logged = new Date();
+  return db.none('INSERT INTO weather (temp, humidity, pressure, logged) VALUES ($1, $2, $3, $4)', [temp, hum, pres, logged]);
+}

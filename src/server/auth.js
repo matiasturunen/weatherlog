@@ -7,7 +7,7 @@ function isEmptyStr(str) {
   return (!str || str == '');
 }
 
-function createAccesstoken(user, lifetime) {
+export function createAccesstoken(user, lifetime) {
   const timeNow = new Date();
   const expires = new Date(timeNow.getTime() + (lifetime * 1000));
 
