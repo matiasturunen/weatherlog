@@ -107,3 +107,17 @@ export function createWeather(temp, hum, pres) {
   const logged = new Date();
   return db.none('INSERT INTO weather (temp, humidity, pressure, logged) VALUES ($1, $2, $3, $4)', [temp, hum, pres, logged]);
 }
+
+export function getWeatherDataLatest(n) {
+  if (n < 2) {
+    return createErrorPromise('Invalid N. Must be greater or equal to 2', 400);
+  } else if (n > 1000) {
+    return createErrorPromise('Invalid N. Must be less or equal to 1000', 400);
+  }
+  // Select n latest values and then sort ascending by logged
+  return db.many(`
+    WITH w AS (SELECT * FROM weather ORDER BY logged DESC LIMIT $1)
+
+    SELECT * FROM w ORDER BY logged ASC
+  `, [n]);
+}

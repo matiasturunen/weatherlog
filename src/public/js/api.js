@@ -47,3 +47,14 @@ function apiGetWeatherHistory(accessToken, timeFrom, timeTo, n) {
     });
   }
 }
+
+function apiGetLatestWeather(accessToken, n) {
+  return $.ajax({
+    type: 'GET',
+    url: '/api/weatherhistory/latest',
+    data: {
+      accessToken: accessToken,
+      n: n,
+    }
+  });
+}

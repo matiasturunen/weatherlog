@@ -13,13 +13,15 @@ const app = new Vue({
     timeFrom: '',
     timeTo: '',
     dataEntries: 10,
-    message: '',
+    latestEntries: 10,
+    isAuthorized: false
   },
   mounted: function () {
     const accessToken = Cookies.get('accessToken');
     apiGetDatesMinmax(accessToken)
       .done(data => {
         console.log(data);
+        this.isAuthorized = true;
         this.datesmin = data.mi;
         this.datesmax = data.ma;
 
@@ -29,7 +31,7 @@ const app = new Vue({
         $('#weather-timeTo').attr('min', this.datesmin.slice(0, -5));
         $('#weather-timeTo').attr('max', this.datesmax.slice(0, -5));
 
-        apiGetWeatherHistory(accessToken, this.datesmin, this.datesmax, 20)
+        apiGetWeatherHistory(accessToken, this.datesmin, this.datesmax, this.dataEntries)
           .done(w => {
             this.weatherData = w;
             this.updateCharts();
@@ -56,6 +58,7 @@ const app = new Vue({
             }]
           },
           options: {
+            events: ['click', 'mousemove']
           }
       });
 
@@ -72,6 +75,7 @@ const app = new Vue({
             }]
           },
           options: {
+            events: ['click', 'mousemove']
           }
       });
 
@@ -88,6 +92,7 @@ const app = new Vue({
             }]
           },
           options: {
+            events: ['click', 'mousemove']
           }
       });
     },
@@ -106,7 +111,7 @@ const app = new Vue({
     },
     loadWeather: function () {
       const accessToken = Cookies.get('accessToken');
-      if (!this.dataEntries || this.dataEntries < 5 || this.dataEntries > 1000) {
+      if (!this.dataEntries || this.dataEntries < 2 || this.dataEntries > 1000) {
         this.dataEntries = 10;
       }
       apiGetWeatherHistory(accessToken, this.timeFrom, this.timeTo, this.dataEntries)
@@ -115,7 +120,38 @@ const app = new Vue({
           this.updateCharts();
           console.log('WW', w);
         })
+        .fail(err =>{
+          console.error('apiGetWeatherHistory', err);
+          if (err.status = 404) {
+            appendError(err.responseText)
+          }
+        });
+    },
+    loadLatestWeather: function () {
+      const accessToken = Cookies.get('accessToken');
+      if (!this.latestEntries || this.latestEntries < 2 || this.latestEntries > 1000) {
+        this.latestEntries = 10;
+      }
+      apiGetLatestWeather(accessToken, this.latestEntries)
+        .done(w => {
+          this.weatherData = w;
+          this.updateCharts();
+          console.log('WW', w);
+        })
         .fail(err => console.error(err));
+    },
+    logout: function () {
+      console.log('Logout');
+      const accessToken = Cookies.get('accessToken');
+      apiLogout(accessToken)
+        .done(() => {
+          Cookies.remove('accessToken');
+          $(location).attr('href','index.html');
+        })
+        .fail(err => {
+          console.error(err);
+          $(location).attr('href','index.html');
+        })
     }
   }
 });

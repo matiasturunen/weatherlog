@@ -12,46 +12,68 @@
     <link rel="stylesheet" type="text/css" href="css/style.css">
   </head>
   <body>
-    <div class="container-fluid">
-      <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="#">Weatherlog</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
+    <div id="app-main" class="container-fluid">
+      <div v-if="isAuthorized">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+          <a class="navbar-brand" href="#">Weatherlog</a>
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
 
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul class="navbar-nav mr-auto">
-            <li class="nav-item active">
-              <a class="nav-link" href="#">Logout</a>
-            </li>
-          </ul>
-        </div>
-      </nav>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+              <li class="nav-item active">
+                <a class="nav-link" href="#" v-on:click="logout">Logout</a>
+              </li>
+            </ul>
+          </div>
+        </nav>
 
-      <div id="app-main">
-	      <div id="weather-form" class="container">
-          <p>{{ message }}</p>
-          <form v-on:submit.prevent method=post class="form-inline">
-            <div class="form-group">
-              <label class="my-1 mr-2" for="weather-timeFrom">From</label>
-              <input v-model="timeFrom" type="datetime-local" name="timeFrom" placeholder="timeFrom" id="weather-timeFrom" class="form-control my-1 mr-sm-2">
-            </div>
-            <div class="form-group">
-              <label class="my-1 mr-2" for="weather-timeTo">To</label>
-              <input v-model="timeTo" type="datetime-local" name="timeTo" placeholder="timeTo" id="weather-timeTo" class="form-control my-1 mr-sm-2">
-            </div>
-            <div class="form-group">
-              <label class="my-1 mr-2" for="weather-dataEntries">Datapoints</label>
-              <input v-model="dataEntries" type="number" placeholder="10" min="5" max="1000" name="dataEntries" id="weather-dataEntries" class="form-control my-1 mr-sm-2">
-            </div>
-            <div class="form-group">
-              <button v-on:click="loadWeather" role="submit" type="submit" class="btn btn-primary">Update</button>
-            </div>
-          </form>
+        <div>
+          <div class="container">
+            <div id="main-errors"></div>
+            <p>Select type of data:</p>
+            <ol>
+              <li>Time period with amount of entries</li>
+              <li>Latest entries</li>
+            </ol>
+          </div>
+  	      <div id="weather-form-partial" class="container">
+            <h4>Time period</h4>
+            <form v-on:submit.prevent method=post class="form-inline">
+              <div class="form-group">
+                <label class="my-1 mr-2" for="weather-timeFrom">From</label>
+                <input v-model="timeFrom" type="datetime-local" name="timeFrom" placeholder="timeFrom" id="weather-timeFrom" class="form-control my-1 mr-sm-2">
+              </div>
+              <div class="form-group">
+                <label class="my-1 mr-2" for="weather-timeTo">To</label>
+                <input v-model="timeTo" type="datetime-local" name="timeTo" placeholder="timeTo" id="weather-timeTo" class="form-control my-1 mr-sm-2">
+              </div>
+              <div class="form-group">
+                <label class="my-1 mr-2" for="weather-dataEntries">Datapoints</label>
+                <input v-model="dataEntries" type="number" placeholder="10" min="2" max="1000" name="dataEntries" id="weather-dataEntries" class="form-control my-1 mr-sm-2">
+              </div>
+              <div class="form-group">
+                <button v-on:click="loadWeather" role="submit" type="submit" class="btn btn-primary">Get Period</button>
+              </div>
+            </form>
+          </div>
+          <div class="container">
+            <h4>Latest entries</h4>
+            <form v-on:submit.prevent method=post class="form-inline">
+              <div class="form-group">
+                <label class="my-1 mr-2" for="weather-latestEntries">Datapoints</label>
+                <input v-model="latestEntries" type="number" placeholder="10" min="2" max="1000" name="latestEntries" id="weather-latestEntries" class="form-control my-1 mr-sm-2">
+              </div>
+              <div class="form-group">
+                <button v-on:click="loadLatestWeather" role="submit" type="submit" class="btn btn-primary">Get Latest</button>
+              </div>
+            </form>
+          </div>
+          <canvas class="graph" id="tempChart" width="800" height="400"></canvas>
+          <canvas class="graph" id="humChart" width="800" height="400"></canvas>
+          <canvas class="graph" id="presChart" width="800" height="400"></canvas>
         </div>
-        <canvas class="graph" id="tempChart" width="800" height="400"></canvas>
-        <canvas class="graph" id="humChart" width="800" height="400"></canvas>
-        <canvas class="graph" id="presChart" width="800" height="400"></canvas>
       </div>
     </div>
     <script src="js/api.js"></script>
