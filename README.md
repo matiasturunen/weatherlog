@@ -1,5 +1,11 @@
 # Weatherlog
-Weather data logging utility for apartment environment monitoring. Includes Raspberry Pi app to monitor and save information to remote server. Server on the other hand is responsible for keeping hold of data and to create graphs from it. 
+Weather data logging utility for apartment environment monitoring. Includes Raspberry Pi app to monitor and save information to remote server. Server on the other hand is responsible for keeping hold of data and to create graphs from it.
+
+## Features
+ - Support for multiple sensors
+ - Will feature RuuviTAG support (as soon as I get one in my hands...)
+ - Show current weather information on SenseHAT LED matrix
+ - LED matrix controlled with SenseHATs joystick
 
 ## How to use
 
