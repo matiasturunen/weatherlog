@@ -17,6 +17,7 @@ const app = new Vue({
     isAuthorized: false,
     sensorsVisible: [],
     sensorsAvailable: [],
+    currentCharts: [],
   },
   mounted: function () {
     const accessToken = Cookies.get('accessToken');
@@ -57,6 +58,13 @@ const app = new Vue({
   },
   methods: {
     updateCharts: function () {
+      // Destroy previous charts to avoid flickering
+      for (var i = 0; i < this.currentCharts.length; i++) {
+        this.currentCharts[i].destroy();
+        console.log('Destroyed chart');
+      }
+      this.currentCharts = [];
+
       this.groupChartData();
 
       const tempCtx = document.getElementById('tempChart').getContext('2d');
@@ -75,6 +83,7 @@ const app = new Vue({
             events: ['click', 'mousemove']
           }
       });
+      this.currentCharts.push(tempChart);
 
       const humCtx = document.getElementById('humChart').getContext('2d');
       const humChart = new Chart(humCtx, {
@@ -92,6 +101,7 @@ const app = new Vue({
             events: ['click', 'mousemove']
           }
       });
+      this.currentCharts.push(humChart);
 
       const presCtx = document.getElementById('presChart').getContext('2d');
       const presChart = new Chart(presCtx, {
@@ -109,6 +119,7 @@ const app = new Vue({
             events: ['click', 'mousemove']
           }
       });
+      this.currentCharts.push(presChart);
     },
     groupChartData: function () {
       this.weatherDataGrouped.temp = [];
