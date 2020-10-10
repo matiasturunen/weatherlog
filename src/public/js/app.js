@@ -10,6 +10,15 @@ const app = new Vue({
       pres: [],
       logged: [],
     },
+    weatherDataMultiSensor: [
+      {
+        sensor: 0,
+        temp: [],
+        hum: [],
+        pres: [],
+        logged: [],
+      },
+    ],
     timeFrom: '',
     timeTo: '',
     dataEntries: 10,
@@ -18,6 +27,16 @@ const app = new Vue({
     sensorsVisible: [],
     sensorsAvailable: [],
     currentCharts: [],
+    chartBorderColors: [
+      'rgba(255, 25, 25, 0.2)',
+      'rgba(45, 74, 235, 0.2)',
+      'rgba(74, 235, 45, 0.2)',
+    ],
+    chartBackgroundColors: [
+      'rgba(235, 45, 67, 0.1)',
+      'rgba(45, 74, 235, 0.1)',
+      'rgba(74, 235, 45, 0.1)',
+    ],
   },
   mounted: function () {
     const accessToken = Cookies.get('accessToken');
@@ -57,6 +76,43 @@ const app = new Vue({
       .fail(err => console.error(err));
   },
   methods: {
+    getSensor: function (id) {
+      console.log('ID', id);
+      for (var i = 0; i < this.sensorsAvailable.length; i++) {
+        if (this.sensorsAvailable[i].id == id) {
+          return this.sensorsAvailable[i];
+        }
+      }
+      return new Error('No sensor found with id: ' + id);
+    },
+    getChartBorderColor: function (index) {
+      if (index >= this.chartBorderColors.length) {
+        return this.chartBorderColors[(index % this.chartBorderColors.length)];
+      } else {
+        return this.chartBorderColors[index];
+      }
+    },
+    getChartBackgroundColor: function (index) {
+      if (index >= this.chartBackgroundColors.length) {
+        return this.chartBackgroundColors[(index % this.chartBackgroundColors.length)];
+      } else {
+        return this.chartBackgroundColors[index];
+      }
+    },
+    createChart: function (htmlElement, labels, datasets) {
+      const ctx = document.getElementById(htmlElement).getContext('2d');
+      const chrt = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: datasets,
+          },
+          options: {
+            events: ['click', 'mousemove']
+          }
+      });
+      this.currentCharts.push(chrt);
+    },
     updateCharts: function () {
       // Destroy previous charts to avoid flickering
       for (var i = 0; i < this.currentCharts.length; i++) {
@@ -67,59 +123,60 @@ const app = new Vue({
 
       this.groupChartData();
 
-      const tempCtx = document.getElementById('tempChart').getContext('2d');
-      const tempChart = new Chart(tempCtx, {
-          type: 'line',
-          data: {
-            labels: this.weatherDataGrouped.logged,
-            datasets: [{
-              label: 'Temperature',
-              data: this.weatherDataGrouped.temp,
-              borderColor: 'rgba(255, 25, 25, 0.2)',
-              backgroundColor: 'rgba(235, 45, 67, 0.1)',
-            }]
-          },
-          options: {
-            events: ['click', 'mousemove']
-          }
-      });
-      this.currentCharts.push(tempChart);
+      if (this.sensorsVisible.length == 1) {
+        this.createChart('tempChart', this.weatherDataGrouped.logged, [{
+          label: 'Temperature',
+          data: this.weatherDataGrouped.temp,
+          borderColor: 'rgba(255, 25, 25, 0.2)',
+          backgroundColor: 'rgba(235, 45, 67, 0.1)',
+        }]);
 
-      const humCtx = document.getElementById('humChart').getContext('2d');
-      const humChart = new Chart(humCtx, {
-          type: 'line',
-          data: {
-            labels: this.weatherDataGrouped.logged,
-            datasets: [{
-              label: 'Humidity',
-              data: this.weatherDataGrouped.hum,
-              borderColor: 'rgba(45, 74, 235, 0.2)',
-              backgroundColor: 'rgba(45, 74, 235, 0.1)',
-            }]
-          },
-          options: {
-            events: ['click', 'mousemove']
-          }
-      });
-      this.currentCharts.push(humChart);
+        this.createChart('humChart', this.weatherDataGrouped.logged, [{
+          label: 'Humidity',
+          data: this.weatherDataGrouped.hum,
+          borderColor: 'rgba(45, 74, 235, 0.2)',
+          backgroundColor: 'rgba(45, 74, 235, 0.1)',
+        }]);
 
-      const presCtx = document.getElementById('presChart').getContext('2d');
-      const presChart = new Chart(presCtx, {
-          type: 'line',
-          data: {
-            labels: this.weatherDataGrouped.logged,
-            datasets: [{
-              label: 'Pressure',
-              data: this.weatherDataGrouped.pres,
-              borderColor: 'rgba(74, 235, 45, 0.2)',
-              backgroundColor: 'rgba(74, 235, 45, 0.1)',
-            }]
-          },
-          options: {
-            events: ['click', 'mousemove']
-          }
-      });
-      this.currentCharts.push(presChart);
+        this.createChart('presChart', this.weatherDataGrouped.logged, [{
+          label: 'Pressure',
+          data: this.weatherDataGrouped.pres,
+          borderColor: 'rgba(74, 235, 45, 0.2)',
+          backgroundColor: 'rgba(74, 235, 45, 0.1)',
+        }]);
+      } else {
+        const tempDatasets = [];
+        const humDatasets = [];
+        const presDatasets = [];
+
+        for (var i = 0; i < this.weatherDataMultiSensor.length; i++) {
+          tempDatasets.push({
+            label: this.getSensor(this.weatherDataMultiSensor[i].sensor).name,
+            data: this.weatherDataMultiSensor[i].temp,
+            borderColor: this.getChartBorderColor(i),
+            backgroundColor: this.getChartBackgroundColor(i),
+          });
+
+          humDatasets.push({
+            label: this.getSensor(this.weatherDataMultiSensor[i].sensor).name,
+            data: this.weatherDataMultiSensor[i].hum,
+            borderColor: this.getChartBorderColor(i+1),
+            backgroundColor: this.getChartBackgroundColor(i+1),
+          });
+
+          presDatasets.push({
+            label: this.getSensor(this.weatherDataMultiSensor[i].sensor).name,
+            data: this.weatherDataMultiSensor[i].pres,
+            borderColor: this.getChartBorderColor(i+2),
+            backgroundColor: this.getChartBackgroundColor(i+2),
+          });
+        }
+
+        this.createChart('tempChart', this.weatherDataMultiSensor[0].logged, tempDatasets);
+        this.createChart('humChart', this.weatherDataMultiSensor[0].logged, humDatasets);
+        this.createChart('presChart', this.weatherDataMultiSensor[0].logged, presDatasets);
+      }
+
     },
     groupChartData: function () {
       this.weatherDataGrouped.temp = [];
@@ -127,11 +184,33 @@ const app = new Vue({
       this.weatherDataGrouped.pres = [];
       this.weatherDataGrouped.logged = [];
 
-      for (var i = 0; i < this.weatherData.length; i++) {
-        this.weatherDataGrouped.temp.push(this.weatherData[i].temp)
-        this.weatherDataGrouped.hum.push(this.weatherData[i].humidity)
-        this.weatherDataGrouped.pres.push(this.weatherData[i].pressure)
-        this.weatherDataGrouped.logged.push(this.weatherData[i].logged)
+      if (this.sensorsVisible.length == 1) { // Only 1 sensor
+        for (var i = 0; i < this.weatherData.length; i++) {
+          this.weatherDataGrouped.temp.push(this.weatherData[i].temp)
+          this.weatherDataGrouped.hum.push(this.weatherData[i].humidity)
+          this.weatherDataGrouped.pres.push(this.weatherData[i].pressure)
+          this.weatherDataGrouped.logged.push(this.weatherData[i].logged)
+        }
+      } else {
+        this.weatherDataMultiSensor = [];
+        for (var i = 0; i < this.weatherData.length; i++) {
+          const sensorData = {
+            sensor: 0,
+            temp: [],
+            hum: [],
+            pres: [],
+            logged: [],
+          };
+          sensorData.sensor = this.weatherData[i][0].sensor
+          
+          for(var j = 0; j < this.weatherData[i].length; j++) {
+            sensorData.temp.push(this.weatherData[i][j].temp);
+            sensorData.hum.push(this.weatherData[i][j].humidity);
+            sensorData.pres.push(this.weatherData[i][j].pressure);
+            sensorData.logged.push(this.weatherData[i][j].logged);
+          }
+          this.weatherDataMultiSensor.push(sensorData);
+        }
       }
     },
     loadWeather: function () {
@@ -158,13 +237,41 @@ const app = new Vue({
       if (!this.latestEntries || this.latestEntries < 2 || this.latestEntries > 1000) {
         this.latestEntries = 10;
       }
-      apiGetLatestWeather(accessToken, this.latestEntries, this.sensorsVisible[0])
-        .done(w => {
-          this.weatherData = w;
-          this.updateCharts();
-          console.log('WW', w);
-        })
-        .fail(err => console.error(err));
+      if (this.sensorsVisible.length == 1) {
+        apiGetLatestWeather(accessToken, this.latestEntries, this.sensorsVisible[0])
+          .done(w => {
+            this.weatherData = w;
+            this.updateCharts();
+            console.log('WW', w);
+          })
+          .fail(err => console.error(err));
+      } else {
+        this.weatherData = [];
+
+        const promises = [];
+        for (var i = 0; i < this.sensorsVisible.length; i++) {
+          promises.push(apiGetLatestWeather(accessToken, this.latestEntries, this.sensorsVisible[i])
+            .done(w => {
+              this.weatherData.push(w);
+              return Promise.resolve();
+            })
+            .fail(err => {
+              console.error(err);
+              return Promise.reject(err);
+            }))
+        }
+        Promise.all(promises)
+          .then(() => this.updateCharts())
+          .catch(err => console.error(err));
+
+        /*
+        Promise.all(_.map(this.sensorsVisible, function(sensor) {
+          return apiGetLatestWeather(accessToken, this.latestEntries, sensor)
+            .done(w => this.weatherData.push(w))
+        }))
+        .then(() => this.updateCharts());
+        */
+      }
     },
     logout: function () {
       console.log('Logout');
