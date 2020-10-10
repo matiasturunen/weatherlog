@@ -78,15 +78,15 @@ export function findUserWithToken(access_token) {
   return db.one(sql, [access_token.token]);
 }
 
-export function getWeatherData(timeFrom, timeTo) {
-  return db.many(`SELECT * FROM weather WHERE logged >= $1 AND logged <= $2`, [timeFrom, timeTo]);
+export function getWeatherData(timeFrom, timeTo, sensor) {
+  return db.many(`SELECT * FROM weather WHERE logged >= $1 AND logged <= $2 AND sensor=$3`, [timeFrom, timeTo, sensor]);
 }
 
 export function getDatesMinMax() {
   return db.one(`SELECT MIN(logged) AS mi, MAX(logged) AS ma FROM weather`);
 }
 
-export function getWeatherDataPartial(timeFrom, timeTo, n) {
+export function getWeatherDataPartial(timeFrom, timeTo, n, sensor) {
   if (n < 2) {
     return createErrorPromise('Invalid N', 400);
   }
@@ -94,21 +94,21 @@ export function getWeatherDataPartial(timeFrom, timeTo, n) {
     WITH w AS (
       SELECT *, ROW_NUMBER() OVER(ORDER BY logged ASC) AS row
       FROM weather
-      WHERE logged >= $1 AND logged <= $2
+      WHERE logged >= $1 AND logged <= $2 AND sensor=$4
     )
 
     SELECT * FROM w
     WHERE row % ((SELECT COUNT(*) FROM w) / $3) = 0
     ORDER BY logged ASC
-  `, [timeFrom, timeTo, n]);
+  `, [timeFrom, timeTo, n, sensor]);
 }
 
-export function createWeather(temp, hum, pres) {
+export function createWeather(temp, hum, pres, sensor) {
   const logged = new Date();
-  return db.none('INSERT INTO weather (temp, humidity, pressure, logged) VALUES ($1, $2, $3, $4)', [temp, hum, pres, logged]);
+  return db.none('INSERT INTO weather (temp, humidity, pressure, logged, sensor) VALUES ($1, $2, $3, $4, $5)', [temp, hum, pres, logged, sensor]);
 }
 
-export function getWeatherDataLatest(n) {
+export function getWeatherDataLatest(n, sensor) {
   if (n < 2) {
     return createErrorPromise('Invalid N. Must be greater or equal to 2', 400);
   } else if (n > 1000) {
@@ -116,8 +116,12 @@ export function getWeatherDataLatest(n) {
   }
   // Select n latest values and then sort ascending by logged
   return db.many(`
-    WITH w AS (SELECT * FROM weather ORDER BY logged DESC LIMIT $1)
+    WITH w AS (SELECT * FROM weather WHERE sensor=$2 ORDER BY logged DESC LIMIT $1)
 
     SELECT * FROM w ORDER BY logged ASC
-  `, [n]);
+  `, [n, sensor]);
+}
+
+export function getAvailableSensors() {
+  return db.many('SELECT * FROM sensor');
 }

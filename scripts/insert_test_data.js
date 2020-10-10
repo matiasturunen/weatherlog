@@ -5,7 +5,14 @@ if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
 
-export function createDummyData() {
+function createVariation(value) {
+  if (Math.random() < 0.5) {
+    return value * Math.random(); // Random is always between 0 and 1. This will return smaller number
+  }
+  return value * (1 + Math.random()); // Return bigger than original
+}
+
+export function createDummyData(sensor) {
   const pgp = pg();
 
   const dblib = require('../src/server/db.js');
@@ -21,13 +28,13 @@ export function createDummyData() {
   });
 
   const promises = [];
-  let linedata = [];
+  let ld = [];
   let first = true;
   lineReader.on('line', function (line) {
     if (!first) {
-      linedata = line.split(',');
-      promises.push(db.none(`INSERT INTO weather (temp, humidity, pressure, logged)
-        VALUES ($1,$2,$3,$4)`, [linedata[3], linedata[5], linedata[10], linedata[0]])
+      ld = line.split(',');
+      promises.push(db.none(`INSERT INTO weather (temp, humidity, pressure, logged, sensor)
+        VALUES ($1,$2,$3,$4,$5)`, [createVariation(ld[3]), createVariation(ld[5]), createVariation(ld[10]), ld[0], sensor])
       );
     } else {
       first = false;
@@ -38,6 +45,11 @@ export function createDummyData() {
 }
 
 if (require.main === module) {
-  createDummyData()
-    .catch(err => console.error('Failed to create dummy data: ', err));
+  const args = process.argv.slice(2);
+  if (!args[0]) {
+    console.log('First argument should be sensor id')
+  } else {
+    createDummyData(args[0])
+      .catch(err => console.error('Failed to create dummy data: ', err));
+  }
 }

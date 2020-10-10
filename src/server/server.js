@@ -75,14 +75,14 @@ app.listen(port, () => console.log(`Checklist app listening on port ${port}!`));
 
 app.get('/api/weatherhistory', auth.ensureAuthorized, (req, res) => {
   db.findUserWithToken(req.accessToken)
-    .then(user => db.getWeatherData(req.body.timeFrom, req.body.timeTo))
+    .then(user => db.getWeatherData(req.body.timeFrom, req.body.timeTo, req.body.sensor))
     .then(weather => res.send(weather))
     .catch(err => customOr500(err, res));
 });
 
 app.get('/api/weatherhistory/partial', auth.ensureAuthorized, (req, res) => {
   db.findUserWithToken(req.accessToken)
-    .then(user => db.getWeatherDataPartial(req.query.timeFrom, req.query.timeTo, req.query.n))
+    .then(user => db.getWeatherDataPartial(req.query.timeFrom, req.query.timeTo, req.query.n, req.query.sensor))
     .then(weather => res.send(weather))
     .catch(err => {
       if (err.received == 0) {
@@ -98,7 +98,7 @@ app.get('/api/weatherhistory/partial', auth.ensureAuthorized, (req, res) => {
 
 app.get('/api/weatherhistory/latest', auth.ensureAuthorized, (req, res) => {
   db.findUserWithToken(req.accessToken)
-    .then(user => db.getWeatherDataLatest(req.query.n))
+    .then(user => db.getWeatherDataLatest(req.query.n, req.query.sensor))
     .then(weather => res.send(weather))
     .catch(err => customOr500(err, res));
 });
@@ -109,6 +109,13 @@ app.get('/api/datesminmax', auth.ensureAuthorized, (req, res) => {
     .then(minmax => res.send(minmax))
     .catch(err => customOr500(err, res));
 });
+
+app.get('/api/sensors', auth.ensureAuthorized, (req, res) => {
+  db.findUserWithToken(req.accessToken)
+    .then(user => db.getAvailableSensors())
+    .then(sensors => res.send(sensors))
+    .catch(err => customOr500(err, res));
+})
 
 app.post('/api/weatherhistory/add', auth.ensureAuthorized, (req, res) => {
   db.findUserWithToken(req.accessToken)

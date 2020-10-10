@@ -37,6 +37,12 @@
               <li>Time period with amount of entries</li>
               <li>Latest entries</li>
             </ol>
+            <div class="form-group">
+                <label class="my-1 mr-2" for="weather-sensors">Select sensors</label>
+                <select multiple="true" v-model="sensorsVisible">
+                  <option v-for="sensor in sensorsAvailable" :value="sensor.id">{{ sensor.name }}</option>
+                </select>
+              </div>
           </div>
   	      <div id="weather-form-partial" class="container">
             <h4>Time period</h4>

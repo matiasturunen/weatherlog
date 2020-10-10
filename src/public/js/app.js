@@ -14,14 +14,22 @@ const app = new Vue({
     timeTo: '',
     dataEntries: 10,
     latestEntries: 10,
-    isAuthorized: false
+    isAuthorized: false,
+    sensorsVisible: [],
+    sensorsAvailable: [],
   },
   mounted: function () {
     const accessToken = Cookies.get('accessToken');
-    apiGetDatesMinmax(accessToken)
-      .done(data => {
-        console.log(data);
+    Promise.all([apiGetDatesMinmax(accessToken), apiGetAvailableSensors(accessToken)])
+      .then(values => {
+        data = values[0];
+        sensors = values[1];
+
+        console.log('DATA', data);
+        console.log('SENS', sensors);
+
         this.isAuthorized = true;
+
         this.datesmin = data.mi;
         this.datesmax = data.ma;
 
@@ -31,13 +39,19 @@ const app = new Vue({
         $('#weather-timeTo').attr('min', this.datesmin.slice(0, -5));
         $('#weather-timeTo').attr('max', this.datesmax.slice(0, -5));
 
-        apiGetWeatherHistory(accessToken, this.datesmin, this.datesmax, this.dataEntries)
+        this.sensorsAvailable = sensors;
+
+        apiGetWeatherHistory(accessToken, this.datesmin, this.datesmax, this.dataEntries, this.sensorsAvailable[0].id)
           .done(w => {
             this.weatherData = w;
             this.updateCharts();
             console.log('WW', w);
           })
           .fail(err => console.error(err));
+
+      })
+    apiGetDatesMinmax(accessToken)
+      .done(data => {
       })
       .fail(err => console.error(err));
   },
@@ -114,7 +128,8 @@ const app = new Vue({
       if (!this.dataEntries || this.dataEntries < 2 || this.dataEntries > 1000) {
         this.dataEntries = 10;
       }
-      apiGetWeatherHistory(accessToken, this.timeFrom, this.timeTo, this.dataEntries)
+
+      apiGetWeatherHistory(accessToken, this.timeFrom, this.timeTo, this.dataEntries, this.sensorsVisible[0])
         .done(w => {
           this.weatherData = w;
           this.updateCharts();
@@ -132,7 +147,7 @@ const app = new Vue({
       if (!this.latestEntries || this.latestEntries < 2 || this.latestEntries > 1000) {
         this.latestEntries = 10;
       }
-      apiGetLatestWeather(accessToken, this.latestEntries)
+      apiGetLatestWeather(accessToken, this.latestEntries, this.sensorsVisible[0])
         .done(w => {
           this.weatherData = w;
           this.updateCharts();

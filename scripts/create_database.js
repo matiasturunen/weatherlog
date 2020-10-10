@@ -26,12 +26,18 @@ export function createDatabase() {
                   expires DATE,\
                   user_id INT REFERENCES users(id)\
               );\
+              CREATE TABLE sensor(\
+                  id SERIAL PRIMARY KEY,\
+                  name TEXT,\
+                  identifier TEXT\
+              );\
               CREATE TABLE weather (\
                   id SERIAL PRIMARY KEY,\
                   temp REAL,\
                   humidity REAL,\
                   pressure REAL,\
-                  logged TIMESTAMP WITH TIME ZONE\
+                  logged TIMESTAMP WITH TIME ZONE,\
+                  sensor INT REFERENCES sensor(id)\
               );\
               COMMIT;';
 

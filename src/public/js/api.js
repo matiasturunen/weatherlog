@@ -22,9 +22,9 @@ function apiGetDatesMinmax(accessToken) {
   });
 }
 
-function apiGetWeatherHistory(accessToken, timeFrom, timeTo, n) {
+function apiGetWeatherHistory(accessToken, timeFrom, timeTo, n, sensor) {
   if (n) {
-    console.log('PARAMS', timeFrom, timeTo, n)
+    console.log('PARAMS', timeFrom, timeTo, n, sensor)
     return $.ajax({
       type: 'GET',
       url: '/api/weatherhistory/partial',
@@ -33,6 +33,7 @@ function apiGetWeatherHistory(accessToken, timeFrom, timeTo, n) {
         timeFrom: timeFrom,
         timeTo: timeTo,
         n: n,
+        sensor: sensor,
       }
     });
   } else {
@@ -43,18 +44,28 @@ function apiGetWeatherHistory(accessToken, timeFrom, timeTo, n) {
         accessToken: accessToken,
         timeFrom: timeFrom,
         timeTo: timeTo,
+        sensor: sensor,
       }
     });
   }
 }
 
-function apiGetLatestWeather(accessToken, n) {
+function apiGetLatestWeather(accessToken, n, sensor) {
   return $.ajax({
     type: 'GET',
     url: '/api/weatherhistory/latest',
     data: {
       accessToken: accessToken,
       n: n,
+      sensor: sensor,
     }
   });
+}
+
+function apiGetAvailableSensors(accessToken) {
+  return $.ajax({
+    type: 'GET',
+    url: '/api/sensors',
+    data: { accessToken: accessToken }
+  })
 }

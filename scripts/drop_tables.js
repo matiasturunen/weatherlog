@@ -15,6 +15,7 @@ export function dropTables() {
                   DROP TABLE IF EXISTS access_token;\
                   DROP TABLE IF EXISTS users;\
                   DROP TABLE IF EXISTS weather;\
+                  DROP TABLE IF EXISTS sensor;\
               COMMIT;';
   return db.none(sql);
 }
