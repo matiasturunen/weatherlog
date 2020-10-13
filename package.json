@@ -11,7 +11,8 @@
     "linter": "eslint --ext js src test scripts",
     "test-mocha": "mocha --require babel-register ./test --recursive",
     "create-dummy-data": "babel-node scripts/insert_test_data.js",
-    "loginuser": "babel-node scripts/loginuser.js"
+    "loginuser": "babel-node scripts/loginuser.js",
+    "create-sensor": "babel-node scripts/create_sensor.js"
   },
   "author": "",
   "license": "ISC",

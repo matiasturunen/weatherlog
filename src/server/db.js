@@ -125,3 +125,7 @@ export function getWeatherDataLatest(n, sensor) {
 export function getAvailableSensors() {
   return db.many('SELECT * FROM sensor');
 }
+
+export function createSensor(name, identifier) {
+  return db.one('INSERT INTO sensor (name, identifier) VALUES ($1, $2) RETURNING id', [name, identifier]);
+}

@@ -16,6 +16,18 @@ MAX_SCREENS = 3
 # Interval between broadcasts in seconds
 BROADCAST_INTERVAL = 600
 
+# Allowed RuuviTAGs and other sensors
+SENSORS = { # Format: 'Tag name': 'location description'
+    'SenseHAT': {
+        'id': 1,
+        'name': 'Sisätila'
+    },
+    'CC:72:6B:45:B7:A2': {
+        'id': 2,
+        'name': 'Parveke'
+    }
+}
+
 def getRandomColor():
     return (randint(0,255), randint(0,255), randint(0,255))
 
