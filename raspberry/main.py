@@ -7,6 +7,8 @@ from threading import Thread
 import requests
 import os
 
+from sensor import Sensor
+
 sense = SenseHat()
 sense.set_rotation(270)
 
@@ -17,16 +19,10 @@ MAX_SCREENS = 3
 BROADCAST_INTERVAL = 600
 
 # Allowed RuuviTAGs and other sensors
-SENSORS = { # Format: 'Tag name': 'location description'
-    'SenseHAT': {
-        'id': 1,
-        'name': 'Sisätila'
-    },
-    'CC:72:6B:45:B7:A2': {
-        'id': 2,
-        'name': 'Parveke'
-    }
-}
+SENSORS = [
+    Sensor(1, 'Sisätila', 'SenseHAT'),
+    Sensor(2, 'Parveke', 'CC:72:6B:45:B7:A2')
+]
 
 def getRandomColor():
     return (randint(0,255), randint(0,255), randint(0,255))
