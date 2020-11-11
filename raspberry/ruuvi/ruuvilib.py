@@ -1,9 +1,9 @@
 import time
 import base64
 import math
-from ble import BLEObserver as b
-from dataformats import DataFormats
-from d5fdecoder import Df5Decoder
+from .ble import BLEObserver as b
+from .dataformats import DataFormats
+from .d5fdecoder import Df5Decoder
 
 class Ruuvi(object):
 
@@ -31,7 +31,6 @@ class Ruuvi(object):
             return None
         else:
             return Df5Decoder().decode_data(data)
-
 
 def main():
     for d in Ruuvi.getRuuviData(['CC:72:6B:45:B7:A2'], 10000):

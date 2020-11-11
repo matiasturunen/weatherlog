@@ -8,6 +8,7 @@ import requests
 import os
 
 from sensor import Sensor
+import ruuvi
 
 sense = SenseHat()
 sense.set_rotation(270)
@@ -82,6 +83,12 @@ def showTemp(bc, tc):
     cpu_tempc = float("{0:.2f}".format(cpu_tempc))
 
     temp_calibrated = round(t - ((cpu_tempc - t)/2), 1)
+
+    # Ruuvi test
+    for x in ruuvi.Ruuvi.getRuuviData('CC:72:6B:45:B7:A2'):
+        if x is not None:
+            print('Ruuvidata:', x[1])
+            break
 
     print('TT', t, 'TC', temp_calibrated, 'TH', round(sense.get_temperature_from_humidity(), 1), 'CC', cpu_tempc)
 
