@@ -13,39 +13,44 @@ import ruuvi
 sense = SenseHat()
 sense.set_rotation(270)
 
-# Number of screens
-MAX_SCREENS = 3
-
 # Interval between broadcasts in seconds
-BROADCAST_INTERVAL = 600
+BROADCAST_INTERVAL = 30
 
 # Allowed RuuviTAGs and other sensors
-SENSORS = [
-    Sensor(1, 'Sisätila', 'SenseHAT'),
-    Sensor(2, 'Parveke', 'CC:72:6B:45:B7:A2')
-]
+SENSORS = (
+    Sensor(1, 'SISATILA', 'SenseHAT'),
+    Sensor(2, 'PARVEKE', 'CC:72:6B:45:B7:A2')
+)
 
-def getRandomColor():
-    return (randint(0,255), randint(0,255), randint(0,255))
+SCREENS = (
+    "LAMPO",
+    "KOSTEUS",
+    "PAINE"
+)
+
+BACKGROUND_COLOR = (0, 50, 0)
+FONT_COLOR = (255, 51, 255)
+
+SCROLL_SPEED = 0.1
 
 def main():
     # Start broadcast thread
     thr = Thread(target=broadcast)
+    thr.daemon = True
     thr.start()
 
-    currentScreen = 1
+    currentScreen = 0
+    currentSensor = 0
     drawActive = True # toggle to turn drawing on or off
+    
     while True:
-        font_color = (255, 51, 255)
-        background_color = (0, 50, 0)
-
         if(drawActive):
-            if (currentScreen == 1): 
-                showTemp(background_color, font_color)
+            if (currentScreen == 0): 
+                showTemp(SENSORS[currentSensor])
+            elif (currentScreen == 1):
+                showHum(SENSORS[currentSensor])
             elif (currentScreen == 2):
-                showHum(background_color, font_color)
-            elif (currentScreen == 3):
-                showPres(background_color, font_color)
+                showPres(SENSORS[currentSensor])
             else:
                 # Invalid screen
                 pass
@@ -54,64 +59,73 @@ def main():
             if (event.action == "pressed"):
                 if (event.direction == "left" or event.direction == "right"):
                     currentScreen = getNextScreen(currentScreen, event.direction)
-                elif (event.direction == "up"):
-                    rotateScreen(90)
-                elif (event.direction == "down"):
-                    rotateScreen(-90)
+
+                    sense.show_message(SCREENS[currentScreen], back_colour=BACKGROUND_COLOR, 
+                        text_colour=FONT_COLOR, scroll_speed=SCROLL_SPEED)
+
+                elif (event.direction == "up" or event.direction == "down"):
+                    currentSensor = switchSensor(currentSensor, event.direction)
+
+                    sense.show_message(SENSORS[currentSensor].name, back_colour=BACKGROUND_COLOR, 
+                        text_colour=FONT_COLOR, scroll_speed=SCROLL_SPEED)
+
                 else:
                     # Joystick pressed
                     if (drawActive):
                         drawActive = False
+                        sense.clear()
                     else:
                         drawActive = True
 
-        
+def showTemp(sensor):
+    if (sensor.identifier == "SenseHAT"):
+        t = round(sense.get_temperature_from_pressure(), 1)
+    else:
+        t = getSingleRuuviData(sensor.identifier).temperature
 
-def showTemp(bc, tc):
-    #t = round(sense.get_temperature(), 1)
-    t = round(sense.get_temperature_from_pressure(), 1)
+    message = "T: " + str(t)
+    print(message)
+    sense.show_message(message, back_colour=BACKGROUND_COLOR, text_colour=FONT_COLOR, scroll_speed=SCROLL_SPEED)
 
+def showHum(sensor):
+    if (sensor.identifier == "SenseHAT"):
+        h = round(sense.get_humidity(), 1)
+    else:
+        h = getSingleRuuviData(sensor.identifier).humidity
 
-    # Calibrate temp
-    cpu_temp = subprocess.check_output("vcgencmd measure_temp", shell=True)
-    cpu_temp = cpu_temp.decode("utf-8") # Convert bytes to str
-
-    array = cpu_temp.split("=")
-    array2 = array[1].split("'")
-
-    cpu_tempc = float(array2[0])
-    cpu_tempc = float("{0:.2f}".format(cpu_tempc))
-
-    temp_calibrated = round(t - ((cpu_tempc - t)/2), 1)
-
-    # Ruuvi test
-    for x in ruuvi.Ruuvi.getRuuviData('CC:72:6B:45:B7:A2'):
-        if x is not None:
-            print('Ruuvidata:', x[1])
-            break
-
-    print('TT', t, 'TC', temp_calibrated, 'TH', round(sense.get_temperature_from_humidity(), 1), 'CC', cpu_tempc)
-
-    message = "T: " + str(t) # sensor moved away from cpu, use actual temp
-    sense.show_message(message, back_colour=bc, text_colour=tc, scroll_speed=0.1)
-
-def showHum(bc, tc):
-    h = round(sense.get_humidity(), 1)
     message = "H: " + str(h)
-    sense.show_message(message, back_colour=bc, text_colour=tc, scroll_speed=0.1)
+    print(message)
+    sense.show_message(message, back_colour=BACKGROUND_COLOR, text_colour=FONT_COLOR, scroll_speed=SCROLL_SPEED)
 
-def showPres(bc, tc):
-    p = int(sense.get_pressure())
+def showPres(sensor):
+    if (sensor.identifier == "SenseHAT"):
+        p = int(sense.get_pressure())
+    else:
+        p = getSingleRuuviData(sensor.identifier).pressure
+
     message = "P: " + str(p)
-    sense.show_message(message, back_colour=bc, text_colour=tc, scroll_speed=0.1)
+    print(message)
+    sense.show_message(message, back_colour=BACKGROUND_COLOR, text_colour=FONT_COLOR, scroll_speed=SCROLL_SPEED)
 
 def getNextScreen(current, direction):
-    if (direction == "left" and current == 1):
-        current = MAX_SCREENS
+    if (direction == "left" and current == 0):
+        current = len(SCREENS)-1
     elif (direction == "left"):
         current = current - 1
-    elif (direction == "right" and current == MAX_SCREENS):
-        current = 1
+    elif (direction == "right" and current == len(SCREENS)-1):
+        current = 0
+    else:
+        current = current + 1
+
+    return current
+
+def switchSensor(current, direction):
+    if (direction == "up" and SENSORS[current] == SENSORS[0]):
+        current = len(SENSORS) - 1
+    elif (direction == "up"):
+        current = current - 1
+    elif (direction == "down" and SENSORS[current] == SENSORS[len(SENSORS) - 1]):
+        current = 0
     else:
         current = current + 1
 
@@ -124,6 +138,19 @@ def rotateScreen(degrees):
         sense.set_rotation((sense.rotation + 360) + degrees)
     else:
         sense.set_rotation(sense.rotation + degrees)
+
+def getSingleRuuviData(mac, searchTimeOut=5):
+    ruuviList = []
+    for x in ruuvi.Ruuvi.getRuuviData(mac, searchTimeOut):
+        ruuviList.append(x[1])
+        break
+    if len(ruuviList) > 0:
+        return ruuviList[0]
+    else:
+        return None
+
+def getRandomColor():
+    return (randint(0,255), randint(0,255), randint(0,255))
 
 def broadcast():
     while True:
