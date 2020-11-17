@@ -4,6 +4,7 @@ import time
 import subprocess
 import sys
 from threading import Thread
+import multiprocessing as mp
 import requests
 import os
 
@@ -81,7 +82,11 @@ def showTemp(sensor):
     if (sensor.identifier == "SenseHAT"):
         t = round(sense.get_temperature_from_pressure(), 1)
     else:
-        t = getSingleRuuviData(sensor.identifier).temperature
+        t = getSingleRuuviData(sensor.identifier)
+        if (t == None):
+            return
+        else:
+            t = t.temperature
 
     message = "T: " + str(t)
     print(message)
@@ -91,7 +96,11 @@ def showHum(sensor):
     if (sensor.identifier == "SenseHAT"):
         h = round(sense.get_humidity(), 1)
     else:
-        h = getSingleRuuviData(sensor.identifier).humidity
+        h = getSingleRuuviData(sensor.identifier)
+        if (h == None):
+            return
+        else:
+            h = h.humidity
 
     message = "H: " + str(h)
     print(message)
@@ -101,7 +110,11 @@ def showPres(sensor):
     if (sensor.identifier == "SenseHAT"):
         p = int(sense.get_pressure())
     else:
-        p = getSingleRuuviData(sensor.identifier).pressure
+        p = getSingleRuuviData(sensor.identifier)
+        if (p == None):
+            return
+        else:
+            p = p.pressure
 
     message = "P: " + str(p)
     print(message)
@@ -140,14 +153,37 @@ def rotateScreen(degrees):
         sense.set_rotation(sense.rotation + degrees)
 
 def getSingleRuuviData(mac, searchTimeOut=5):
-    ruuviList = []
-    for x in ruuvi.Ruuvi.getRuuviData(mac, searchTimeOut):
-        ruuviList.append(x[1])
-        break
-    if len(ruuviList) > 0:
-        return ruuviList[0]
-    else:
-        return None
+    startTime = time.time()
+
+    ######################################
+    #
+    # KORJAA: Useita prosesseja kertyy eivätkä sammu vaikka pitäisi
+    #
+    ######################################
+
+    queue = mp.Queue()
+    qval = None
+
+    p = mp.Process(target=ruuvi.Ruuvi.getSingle, args=(mac, queue, searchTimeOut))
+    p.start()
+    p.join(searchTimeOut)
+
+    if (not queue.empty()):
+        qval = queue.get()
+        
+    # while True:
+    #     if (not queue.empty()):
+    #         p.join()
+    #         qval = queue.get()
+    #         break
+
+    #     if (time.time() - startTime > searchTimeOut):
+    #         p.join()
+    #         print('Process terminated')
+    #         break
+    p.terminate()
+    p.close()
+    return qval
 
 def getRandomColor():
     return (randint(0,255), randint(0,255), randint(0,255))
