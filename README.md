@@ -7,6 +7,9 @@ Weather data logging utility for apartment environment monitoring. Includes Rasp
  - Show current weather information on SenseHAT LED matrix
  - LED matrix controlled with SenseHATs joystick
 
+## Work In Progress
+This software is under development. In theory it does work, but in practice the RPi app will stop responding after some time. I'm working on that. Also the RPi-Server connection does not yet support multiple sensors
+
 ## How to use
 
 1. Install Raspberry Pi code to the Pi with temp, hum and pres sensors (I'm planning to use SENSE HAT)
