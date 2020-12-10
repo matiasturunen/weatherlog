@@ -4,6 +4,7 @@ import math
 from .ble import BLEObserver as b
 from .dataformats import DataFormats
 from .d5fdecoder import Df5Decoder
+from .queuedata import Queuedata
 
 class Ruuvi(object):
 
@@ -15,9 +16,10 @@ class Ruuvi(object):
         
         for d in dataIterator:
             try:
-                if (time.time() - startTime > searchTimeOut):
-                    dataIterator.send(StopIteration)
-                    continue
+                if (searchTimeOut > 0):
+                    if (time.time() - startTime > searchTimeOut):
+                        dataIterator.send(StopIteration)
+                        continue
 
                 (data, dataFormat) = DataFormats.convertData(d[1])
                 if (data is not None):
@@ -38,6 +40,12 @@ class Ruuvi(object):
             return None
         else:
             return Df5Decoder().decode_data(data)
+
+    @staticmethod
+    def yieldToQueue(mac, queue, searchTimeOut=5):
+        ruuvigen = Ruuvi.getRuuviData(mac, searchTimeOut)
+        for data in ruuvigen:
+            queue.put(Queuedata(data))
 
     @staticmethod
     def getSingle(mac, queue, searchTimeOut=5):

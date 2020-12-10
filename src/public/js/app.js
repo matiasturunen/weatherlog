@@ -263,14 +263,6 @@ const app = new Vue({
         Promise.all(promises)
           .then(() => this.updateCharts())
           .catch(err => console.error(err));
-
-        /*
-        Promise.all(_.map(this.sensorsVisible, function(sensor) {
-          return apiGetLatestWeather(accessToken, this.latestEntries, sensor)
-            .done(w => this.weatherData.push(w))
-        }))
-        .then(() => this.updateCharts());
-        */
       }
     },
     logout: function () {
