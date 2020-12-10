@@ -210,9 +210,10 @@ class Weatherlog:
                             pres = int(self.sense.get_pressure())
                         else:
                             try:
-                                temp = round(self.getNewestRuuvidata(sensor.queue).temperature, 1)
-                                hum = round(self.getNewestRuuvidata(sensor.queue).humidity, 1)
-                                pres = int(self.getNewestRuuvidata(sensor.queue).pressure)
+                                rd = self.getNewestRuuvidata(sensor.queue)
+                                temp = round(rd.temperature, 1)
+                                hum = round(rd.humidity, 1)
+                                pres = int(rd.pressure)
                             except AttributeError: # getNewestRuuvidata() result is None
                                 continue
 

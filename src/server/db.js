@@ -50,7 +50,6 @@ export function findUser(params) {
   } else {
     return createErrorPromise('Invalid params', 400); // Must have some query pieces. Without them, it will return first user entity.
   }
-
   return db.one(query, queryParams);
 }
 

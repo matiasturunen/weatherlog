@@ -54,7 +54,6 @@ function customOr500(err, res) {
  */
 
 app.post('/api/login', (req, res) => {
-  console.log('login attempt')
   auth.loginUser(req.body)
     .then(accessToken => res.send(accessToken))
     .catch(err => customOr500(err, res));
