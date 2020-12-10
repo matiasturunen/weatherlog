@@ -1,6 +1,7 @@
 import time
 import base64
 import math
+import sys
 from .ble import BLEObserver as b
 from .dataformats import DataFormats
 from .d5fdecoder import Df5Decoder
@@ -43,9 +44,12 @@ class Ruuvi(object):
 
     @staticmethod
     def yieldToQueue(mac, queue, searchTimeOut=5):
-        ruuvigen = Ruuvi.getRuuviData(mac, searchTimeOut)
-        for data in ruuvigen:
-            queue.put(Queuedata(data))
+        try:
+            ruuvigen = Ruuvi.getRuuviData(mac, searchTimeOut)
+            for data in ruuvigen:
+                queue.put(Queuedata(data))
+        except KeyboardInterrupt:
+            sys.exit(0)
 
     @staticmethod
     def getSingle(mac, queue, searchTimeOut=5):

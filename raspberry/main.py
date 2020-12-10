@@ -1,10 +1,10 @@
 from sense_hat import SenseHat
 from random import randint
+from queue import LifoQueue
+from threading import Thread
 import time
 import subprocess
 import sys
-from threading import Thread
-from queue import LifoQueue
 import multiprocessing as mp
 import requests
 import os
@@ -91,6 +91,12 @@ class Weatherlog:
                         else:
                             drawActive = True
 
+                            # Show information about current state of used sensor and screen
+                            self.sense.show_message(SENSORS[currentSensor].name, back_colour=BACKGROUND_COLOR,
+                                text_colour=FONT_COLOR, scroll_speed=SCROLL_SPEED)
+                            self.sense.show_message(SCREENS[currentScreen], back_colour=BACKGROUND_COLOR,
+                                text_colour=FONT_COLOR, scroll_speed=SCROLL_SPEED)
+
     def showTemp(self, sensor):
         if (sensor.identifier == "SenseHAT"):
             t = round(self.sense.get_temperature_from_pressure(), 1)
@@ -99,7 +105,7 @@ class Weatherlog:
             if (t == None):
                 t = 'ND' # ND = NoData
             else:
-                t = t.temperature
+                t = round(t.temperature, 1)
 
         message = "T: " + str(t)
         print(message)
@@ -113,7 +119,7 @@ class Weatherlog:
             if (h == None):
                 h = 'ND' # ND = NoData
             else:
-                h = h.humidity
+                h = round(h.humidity, 1)
 
         message = "H: " + str(h)
         print(message)
@@ -127,7 +133,7 @@ class Weatherlog:
             if (p == None):
                 p = 'ND' # ND = NoData
             else:
-                p = p.pressure
+                p = int(p.pressure)
 
         message = "P: " + str(p)
         print(message)
@@ -165,44 +171,6 @@ class Weatherlog:
         else:
             self.sense.set_rotation(self.sense.rotation + degrees)
 
-    # def getSingleRuuviData(self, mac, searchTimeOut=5):
-    #     startTime = time.time()
-
-    #     ######################################
-    #     #
-    #     # KORJAA: Useita prosesseja kertyy eivätkä sammu vaikka pitäisi
-    #     #
-    #     ######################################
-
-    #     queue = mp.Queue()
-    #     qval = None
-
-    #     p = mp.Process(target=ruuvi.Ruuvi.getSingle, args=(mac, queue, searchTimeOut))
-    #     p.start()
-    #     p.join(searchTimeOut)
-
-    #     if (not queue.empty()):
-    #         qval = queue.get()
-            
-    #     while True:
-    #     #     if (not queue.empty()):
-    #     #         p.join()
-    #     #         qval = queue.get()
-    #     #         break
-
-    #         if (time.time() - startTime > searchTimeOut):
-    #             print('Terminate started')
-    #             p.terminate()
-    #             print('Process terminated')
-    #             break
-
-    #     try:
-    #         p.terminate()
-    #         p.close()
-    #     except ValueError as e:
-    #         print('Error at process close:', e)
-    #     return qval
-
     def getRuuviQueue(self, mac, searchTimeOut=5):
         #queue = LifoQueue()
         queue = mp.Queue()
@@ -212,60 +180,61 @@ class Weatherlog:
         return queue
 
     def getNewestRuuvidata(self, queue):
-        print('FCALL')
-        if (not queue.empty()):
-            data = queue.get()
-            print('Data from queue:', data.timestamp, data.data)
-            if (self.prevRuuviData is None):
-                self.prevRuuviData = data
-                return data.data[1]
-            else:
-                if (data.timestamp > self.prevRuuviData.timestamp):
-                    self.prevRuuviData = data
-                    return data.data[1]
+        allData = []
+        while not queue.empty():
+            allData.append(queue.get())
+
+        if (len(allData) > 0):
+            print('Data len:', len(allData))
+            print('Data obj:', allData[-1].timestamp, allData[-1].data)
+            return allData[-1].data[1]
         return None
-
-
-        # now = time.time()
-        # while True:
-        #     if (queue.empty()):
-        #         break
-        #     else:
-        #         data = queue.get()
-
-
 
     def getRandomColor(self):
         return (randint(0,255), randint(0,255), randint(0,255))
 
     def broadcast(self):
-        while True:
-            time.sleep(BROADCAST_INTERVAL - (time.time() % BROADCAST_INTERVAL))
-            print('Broadcast', time.time())
+        try:
+            while True:
+                time.sleep(BROADCAST_INTERVAL - (time.time() % BROADCAST_INTERVAL))
+                print('Broadcast', time.time())
 
-            temp = round(self.sense.get_temperature_from_pressure(), 1)
-            hum = round(self.sense.get_humidity(), 1)
-            pres = int(self.sense.get_pressure())
+                url = os.environ.get('WEATHERLOG_URL')
+                token = os.environ.get('WEATHERLOG_TOKEN')
+                print('url', url, 'token', token)
+                if (url and token):
+                    for sensor in SENSORS:
+                        if (sensor.identifier == 'SenseHAT'):
+                            temp = round(self.sense.get_temperature_from_pressure(), 1)
+                            hum = round(self.sense.get_humidity(), 1)
+                            pres = int(self.sense.get_pressure())
+                        else:
+                            try:
+                                temp = round(self.getNewestRuuvidata(sensor.queue).temperature, 1)
+                                hum = round(self.getNewestRuuvidata(sensor.queue).humidity, 1)
+                                pres = int(self.getNewestRuuvidata(sensor.queue).pressure)
+                            except AttributeError: # getNewestRuuvidata() result is None
+                                continue
 
-            url = os.environ.get('WEATHERLOG_URL')
-            token = os.environ.get('WEATHERLOG_TOKEN')
-            body = {
-                "temp": temp,
-                "humidity": hum,
-                "pressure": pres,
-                "accessToken": token
-            }
-            if (url and token):
-                try:
-                    res = requests.post(url, data=body, timeout=2.5)
-                    print('RES', res)
-                except ConnectionRefusedError as e:
-                    print('ERROR:', e)
-                except Exception as e:
-                    print('Unknown error:', e)
+                        body = {
+                            "temp": temp,
+                            "humidity": hum,
+                            "pressure": pres,
+                            "accessToken": token,
+                            "sensor_id": sensor.id
+                        }
+                        try:
+                            res = requests.post(url, data=body, timeout=2.5)
+                            print('RES', res)
+                        except ConnectionRefusedError as e:
+                            print('ERROR:', e)
+                        except Exception as e:
+                            print('Unknown error:', e)
 
-            else:
-                print('No url or token')
+                else:
+                    print('No url or token')
+        except KeyboardInterrupt:
+            sys.exit(0)
 
 if __name__ == '__main__':
     wl = Weatherlog()

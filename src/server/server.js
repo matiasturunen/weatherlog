@@ -54,6 +54,7 @@ function customOr500(err, res) {
  */
 
 app.post('/api/login', (req, res) => {
+  console.log('login attempt')
   auth.loginUser(req.body)
     .then(accessToken => res.send(accessToken))
     .catch(err => customOr500(err, res));
@@ -67,7 +68,6 @@ app.post('/api/logout', auth.ensureAuthorized, (req, res) => {
     .catch(err => customOr500(err, res));
 });
 
-app.listen(port, () => console.log(`Checklist app listening on port ${port}!`));
 
 /* 
  * Weather stuff
@@ -119,10 +119,11 @@ app.get('/api/sensors', auth.ensureAuthorized, (req, res) => {
 
 app.post('/api/weatherhistory/add', auth.ensureAuthorized, (req, res) => {
   db.findUserWithToken(req.accessToken)
-    .then(user => db.createWeather(req.body.temp, req.body.humidity, req.body.pressure))
+    .then(user => db.createWeather(req.body.temp, req.body.humidity, req.body.pressure, req.body.sensor_id))
     .then(() => res.sendStatus(200))
     .catch(err => customOr500(err, res));
 });
 
+app.listen(port, () => console.log(`Weatherlog app listening on port ${port}!`));
 // export app to use it somewhere else
 export default app;
