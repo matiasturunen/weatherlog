@@ -13,7 +13,7 @@ from sensor import Sensor
 import ruuvi
 
 # Interval between broadcasts in seconds
-BROADCAST_INTERVAL = 30
+BROADCAST_INTERVAL = 300
 
 # Allowed RuuviTAGs and other sensors
 SENSORS = (
