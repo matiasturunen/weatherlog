@@ -14,6 +14,11 @@ This software is under development. In theory it does work, but in practice the 
 
 1. Install Raspberry Pi code to the Pi with temp, hum and pres sensors (I'm planning to use SENSE HAT)
 2. Install remote server software
+	1. Install packages
+	2. Set env variables, mainly `JWT_SECRET` and `ADMIN_PASS`
+	3. Run db create `npm run create-database`
+	4. Create sensors `npm run create-sensor sensor_name sensor_identifier`
+	5. Update sensor id's to RPi code
 3. Generate access token for the Pi and save it to the Pi. Connect Pi to the internet.
 4. Cross your fingers and wait for first databurst =)
 

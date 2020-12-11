@@ -13,7 +13,14 @@ from sensor import Sensor
 import ruuvi
 
 # Interval between broadcasts in seconds
-BROADCAST_INTERVAL = 300
+BROADCAST_INTERVAL = os.environ.get('WEATHERLOG_BC_INTERVAL')
+try:
+    BROADCAST_INTERVAL = int(BROADCAST_INTERVAL)
+except ValueError:
+    BROADCAST_INTERVAL = None
+
+if (BROADCAST_INTERVAL is None):
+    BROADCAST_INTERVAL = 300
 
 # Allowed RuuviTAGs and other sensors
 SENSORS = (
