@@ -10,6 +10,7 @@ import requests
 import os
 
 from sensor import Sensor
+from moon import Moon
 import ruuvi
 
 # Interval between broadcasts in seconds
@@ -17,6 +18,8 @@ BROADCAST_INTERVAL = os.environ.get('WEATHERLOG_BC_INTERVAL')
 try:
     BROADCAST_INTERVAL = int(BROADCAST_INTERVAL)
 except ValueError:
+    BROADCAST_INTERVAL = None
+except TypeError:
     BROADCAST_INTERVAL = None
 
 if (BROADCAST_INTERVAL is None):
@@ -43,10 +46,13 @@ class Weatherlog:
 
     prevRuuviData = None
     sense = None
+    moonAnimation = None
 
     def __init__(self):
         self.sense = SenseHat()
         self.sense.set_rotation(0)
+
+        self.moonAnimation = Moon(3)
         
 
     def start(self):
@@ -75,6 +81,9 @@ class Weatherlog:
                 else:
                     # Invalid screen
                     pass
+            else:
+                # Show moon animation
+                self.moonAnimation.play(self.sense)
 
             for event in self.sense.stick.get_events():
                 if (event.action == "pressed"):
