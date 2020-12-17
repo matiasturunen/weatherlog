@@ -8,6 +8,7 @@ import sys
 import multiprocessing as mp
 import requests
 import os
+import logging
 
 from sensor import Sensor
 from moon import Moon
@@ -47,10 +48,13 @@ class Weatherlog:
     prevRuuviData = None
     sense = None
     moonAnimation = None
+    logger = None
 
     def __init__(self):
         self.sense = SenseHat()
         self.sense.set_rotation(0)
+
+        self.initLogger()
 
         self.moonAnimation = Moon(3)
         
@@ -61,15 +65,23 @@ class Weatherlog:
         thr.daemon = True
         thr.start()
 
+        # Start ruuvi process watcher
+        ruuvi_thr = Thread(target=self.ruuviProcessWatcher)
+        ruuvi_thr.daemon = True
+        ruuvi_thr.start()
+
         currentScreen = 0
         currentSensor = 0
         drawActive = True # toggle to turn drawing on or off
 
+        # Initialize sensors with queue and process data
         for s in SENSORS:
             if (s.identifier != 'SenseHAT'):
-                s.queue = self.getRuuviQueue(s.identifier, 0)
+                q, p = self.getRuuviQueue(s.identifier, 0)
+                s.queue = q
+                s.proc = p
 
-        
+        # Main loop
         while True:
             if(drawActive):
                 if (currentScreen == 0): 
@@ -112,6 +124,7 @@ class Weatherlog:
                                 text_colour=FONT_COLOR, scroll_speed=SCROLL_SPEED)
                             self.sense.show_message(SCREENS[currentScreen], back_colour=BACKGROUND_COLOR,
                                 text_colour=FONT_COLOR, scroll_speed=SCROLL_SPEED)
+
 
     def showTemp(self, sensor):
         if (sensor.identifier == "SenseHAT"):
@@ -187,13 +200,31 @@ class Weatherlog:
         else:
             self.sense.set_rotation(self.sense.rotation + degrees)
 
+    def initLogger(self):
+        # create logger
+        self.logger = logging.getLogger('weatherlog')
+        self.logger.setLevel(logging.INFO)
+
+        # Create console handler and set level to INFO
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+
+        # create formatter
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+        # add formatter to ch
+        ch.setFormatter(formatter)
+        
+        # add ch to logger
+        self.logger.addHandler(ch)
+
     def getRuuviQueue(self, mac, searchTimeOut=5):
         #queue = LifoQueue()
         queue = mp.Queue()
         proc = mp.Process(target=ruuvi.Ruuvi.yieldToQueue, args=(mac, queue, searchTimeOut), daemon=False)
         proc.start()
 
-        return queue
+        return queue, proc
 
     def getNewestRuuvidata(self, queue):
         allData = []
@@ -201,10 +232,29 @@ class Weatherlog:
             allData.append(queue.get())
 
         if (len(allData) > 0):
-            print('Data len:', len(allData))
-            print('Data obj:', allData[-1].timestamp, allData[-1].data)
             return allData[-1].data[1]
         return None
+
+    def ruuviProcessWatcher(self):
+        watchInterval = 3600
+        while True:
+            self.checkForRunningRuuviProcesses(0)
+            time.sleep(watchInterval - (time.time() % watchInterval))
+
+    # Check if ruuvi process is running and restart if needed
+    def checkForRunningRuuviProcesses(self, searchTimeOut=0):
+        for s in SENSORS:
+            if (s.identifier != 'SenseHAT'):
+                if (s.proc is not None):
+                    if (not s.isRunning()):
+                        s.proc.terminate()
+                        
+                        q, p = self.getRuuviQueue(s.identifier, searchTimeOut)
+                        s.queue = q
+                        s.proc = p
+
+                        self.logger.warning('Created new Ruuvi process for sensor ' + s.identifier)
+
 
     def getRandomColor(self):
         return (randint(0,255), randint(0,255), randint(0,255))
@@ -214,10 +264,11 @@ class Weatherlog:
             while True:
                 time.sleep(BROADCAST_INTERVAL - (time.time() % BROADCAST_INTERVAL))
                 print('Broadcast', time.time())
+                self.logger.info('Broadcast started')
 
                 url = os.environ.get('WEATHERLOG_URL')
                 token = os.environ.get('WEATHERLOG_TOKEN')
-                print('url', url, 'token', token)
+
                 if (url and token):
                     for sensor in SENSORS:
                         if (sensor.identifier == 'SenseHAT'):
@@ -243,15 +294,21 @@ class Weatherlog:
                         try:
                             res = requests.post(url, data=body, timeout=2.5)
                             print('RES', res)
+                            self.logger.info('Broadcast for sensor ' + sensor.identifier + ' successful')
                         except ConnectionRefusedError as e:
                             print('ERROR:', e)
+                            self.logger.warning('Broadcast connection error: ' + e)
                         except Exception as e:
                             print('Unknown error:', e)
+                            self.logger.warning('Unknown broadcast error: ' + e)
 
                 else:
                     print('No url or token')
+                    self.logger.info('Broadcast: No url or token')
         except KeyboardInterrupt:
             sys.exit(0)
+        except Exception as err:
+            self.logger.error('Error at broadcast. Error is: ' + err)
 
 if __name__ == '__main__':
     wl = Weatherlog()
