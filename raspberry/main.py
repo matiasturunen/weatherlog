@@ -206,7 +206,7 @@ class Weatherlog:
         self.logger.setLevel(logging.INFO)
 
         # Create console handler and set level to INFO
-        ch = logging.StreamHandler()
+        ch = logging.FileHandler('weatherlog.log')
         ch.setLevel(logging.INFO)
 
         # create formatter
@@ -253,7 +253,7 @@ class Weatherlog:
                         s.queue = q
                         s.proc = p
 
-                        self.logger.warning('Created new Ruuvi process for sensor ' + s.identifier)
+                        self.logger.warning('Created new Ruuvi process for sensor ' + str(s.identifier))
 
 
     def getRandomColor(self):
@@ -294,13 +294,13 @@ class Weatherlog:
                         try:
                             res = requests.post(url, data=body, timeout=2.5)
                             print('RES', res)
-                            self.logger.info('Broadcast for sensor ' + sensor.identifier + ' successful')
+                            self.logger.info('Broadcast for sensor "' + str(sensor.identifier) + '" successful')
                         except ConnectionRefusedError as e:
                             print('ERROR:', e)
-                            self.logger.warning('Broadcast connection error: ' + e)
+                            self.logger.warning('Broadcast connection error: ' + str(e))
                         except Exception as e:
                             print('Unknown error:', e)
-                            self.logger.warning('Unknown broadcast error: ' + e)
+                            self.logger.warning('Unknown broadcast error: ' + str(e))
 
                 else:
                     print('No url or token')
@@ -308,7 +308,7 @@ class Weatherlog:
         except KeyboardInterrupt:
             sys.exit(0)
         except Exception as err:
-            self.logger.error('Error at broadcast. Error is: ' + err)
+            self.logger.error('Error at broadcast. Error is: ' + str(err))
 
 if __name__ == '__main__':
     wl = Weatherlog()
