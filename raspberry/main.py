@@ -74,6 +74,8 @@ class Weatherlog:
         currentSensor = 0
         drawActive = True # toggle to turn drawing on or off
 
+        moonActive = False
+
         # Initialize sensors with queue and process data
         for s in SENSORS:
             if (s.identifier != 'SenseHAT'):
@@ -95,7 +97,8 @@ class Weatherlog:
                     pass
             else:
                 # Show moon animation
-                self.moonAnimation.play(self.sense)
+                if (moonActive):
+                    self.moonAnimation.play(self.sense)
 
             for event in self.sense.stick.get_events():
                 if (event.action == "pressed"):
@@ -118,6 +121,10 @@ class Weatherlog:
                             self.sense.clear()
                         else:
                             drawActive = True
+                            if (moonActive):
+                                moonActive = False
+                            else:
+                                moonActive = True
 
                             # Show information about current state of used sensor and screen
                             self.sense.show_message(SENSORS[currentSensor].name, back_colour=BACKGROUND_COLOR,
@@ -282,6 +289,7 @@ class Weatherlog:
                                 hum = round(rd.humidity, 1)
                                 pres = int(rd.pressure)
                             except AttributeError: # getNewestRuuvidata() result is None
+                                self.logger.warning('Broadcast: getNewestRuuvidata() returned None for sensor"' + str(sensor.identifier) + '"')
                                 continue
 
                         body = {
